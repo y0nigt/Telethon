@@ -321,15 +321,15 @@ class AuthMethods(MessageParseMethods, UserMethods):
 
             # May raise PhoneCodeEmptyError, PhoneCodeExpiredError,
             # PhoneCodeHashEmptyError or PhoneCodeInvalidError.
-            result = await self(functions.auth.SignInRequest(
+            result = await self(functions.auth.SignIn(
                 phone, phone_code_hash, str(code)))
         elif password:
-            pwd = await self(functions.account.GetPasswordRequest())
-            result = await self(functions.auth.CheckPasswordRequest(
+            pwd = await self(functions.account.GetPassword())
+            result = await self(functions.auth.CheckPassword(
                 pwd_mod.compute_check(pwd, password)
             ))
         elif bot_token:
-            result = await self(functions.auth.ImportBotAuthorizationRequest(
+            result = await self(functions.auth.ImportBotAuthorization(
                 flags=0, bot_auth_token=bot_token,
                 api_id=self._api_id, api_hash=self._api_hash
             ))
@@ -403,7 +403,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
         phone, phone_code_hash = \
             self._parse_phone_and_hash(phone, phone_code_hash)
 
-        result = await self(functions.auth.SignUpRequest(
+        result = await self(functions.auth.SignUp(
             phone_number=phone,
             phone_code_hash=phone_code_hash,
             phone_code=str(code),
@@ -413,7 +413,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
 
         if self._tos:
             await self(
-                functions.help.AcceptTermsOfServiceRequest(self._tos.id))
+                functions.help.AcceptTermsOfService(self._tos.id))
 
         return self._on_login(result.user)
 
@@ -465,7 +465,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
 
         if not phone_hash:
             try:
-                result = await self(functions.auth.SendCodeRequest(
+                result = await self(functions.auth.SendCode(
                     phone, self._api_id, self._api_hash, types.CodeSettings()))
             except errors.AuthRestartError:
                 return await self.send_code_request(phone, force_sms=force_sms)
@@ -479,7 +479,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
 
         if force_sms:
             result = await self(
-                functions.auth.ResendCodeRequest(phone, phone_hash))
+                functions.auth.ResendCode(phone, phone_hash))
 
             self._phone_code_hash[phone] = result.phone_code_hash
 
@@ -499,7 +499,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
                 client.log_out()
         """
         try:
-            await self(functions.auth.LogOutRequest())
+            await self(functions.auth.LogOut())
         except errors.RPCError:
             return False
 
@@ -579,7 +579,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
         if email and not callable(email_code_callback):
             raise ValueError('email present without email_code_callback')
 
-        pwd = await self(functions.account.GetPasswordRequest())
+        pwd = await self(functions.account.GetPassword())
         pwd.new_algo.salt1 += os.urandom(32)
         assert isinstance(pwd, types.account.Password)
         if not pwd.has_password and current_password:
@@ -597,7 +597,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
             new_password_hash = b''
 
         try:
-            await self(functions.account.UpdatePasswordSettingsRequest(
+            await self(functions.account.UpdatePasswordSettings(
                 password=password,
                 new_settings=types.account.PasswordInputSettings(
                     new_algo=pwd.new_algo,
@@ -613,7 +613,7 @@ class AuthMethods(MessageParseMethods, UserMethods):
                 code = await code
 
             code = str(code)
-            await self(functions.account.ConfirmPasswordEmailRequest(code))
+            await self(functions.account.ConfirmPasswordEmail(code))
 
         return True
 

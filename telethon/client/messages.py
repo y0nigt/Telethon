@@ -70,7 +70,7 @@ class _MessagesIter(RequestIter):
             self.from_id = None
 
         if not self.entity:
-            self.request = functions.messages.SearchGlobalRequest(
+            self.request = functions.messages.SearchGlobal(
                 q=search or '',
                 offset_rate=offset_date,
                 offset_peer=types.InputPeerEmpty(),
@@ -92,7 +92,7 @@ class _MessagesIter(RequestIter):
                 # and set `from_id` to None to avoid checking it locally.
                 self.from_id = None
 
-            self.request = functions.messages.SearchRequest(
+            self.request = functions.messages.Search(
                 peer=self.entity,
                 q=search or '',
                 filter=filter() if isinstance(filter, type) else filter,
@@ -119,7 +119,7 @@ class _MessagesIter(RequestIter):
                         self.entity, 1, offset_date=offset_date):
                     self.request.offset_id = m.id + 1
         else:
-            self.request = functions.messages.GetHistoryRequest(
+            self.request = functions.messages.GetHistory(
                 peer=self.entity,
                 limit=1,
                 offset_date=offset_date,
@@ -257,12 +257,12 @@ class _IDsIter(RequestIter):
         if isinstance(entity, (types.InputChannel, types.InputPeerChannel)):
             try:
                 r = await self.client(
-                    functions.channels.GetMessagesRequest(entity, ids))
+                    functions.channels.GetMessages(entity, ids))
             except errors.MessageIdsEmptyError:
                 # All IDs were invalid, use a dummy result
                 r = types.messages.MessagesNotModified(len(ids))
         else:
-            r = await self.client(functions.messages.GetMessagesRequest(ids))
+            r = await self.client(functions.messages.GetMessages(ids))
             if entity:
                 from_id = await self.client.get_peer_id(entity)
 
@@ -695,7 +695,7 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
                     entities=message.entities
                 )
 
-            request = functions.messages.SendMessageRequest(
+            request = functions.messages.SendMessage(
                 peer=entity,
                 message=message.message or '',
                 silent=silent,
@@ -710,7 +710,7 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
         else:
             message, msg_ent = await self._parse_message_text(message,
                                                               parse_mode)
-            request = functions.messages.SendMessageRequest(
+            request = functions.messages.SendMessage(
                 peer=entity,
                 message=message,
                 entities=msg_ent,
@@ -862,7 +862,7 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
 
                 chunk = [m.id for m in chunk]
 
-            req = functions.messages.ForwardMessagesRequest(
+            req = functions.messages.ForwardMessages(
                 from_peer=chat,
                 id=chunk,
                 to_peer=entity,
@@ -968,7 +968,7 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
         file_handle, media, image = await self._file_to_media(file)
 
         if isinstance(entity, types.InputBotInlineMessageID):
-            return await self(functions.messages.EditInlineBotMessageRequest(
+            return await self(functions.messages.EditInlineBotMessage(
                 id=entity,
                 message=text,
                 no_webpage=not link_preview,
@@ -978,7 +978,7 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
             ))
 
         entity = await self.get_input_entity(entity)
-        request = functions.messages.EditMessageRequest(
+        request = functions.messages.EditMessage(
             peer=entity,
             id=utils.get_message_id(message),
             message=text,
@@ -1052,10 +1052,10 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
 
         entity = await self.get_input_entity(entity) if entity else None
         if isinstance(entity, types.InputPeerChannel):
-            return await self([functions.channels.DeleteMessagesRequest(
+            return await self([functions.channels.DeleteMessages(
                          entity, list(c)) for c in utils.chunks(message_ids)])
         else:
-            return await self([functions.messages.DeleteMessagesRequest(
+            return await self([functions.messages.DeleteMessages(
                          list(c), revoke) for c in utils.chunks(message_ids)])
 
     # endregion
@@ -1118,7 +1118,7 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
         """
         entity = await self.get_input_entity(entity)
         if clear_mentions:
-            await self(functions.messages.ReadMentionsRequest(entity))
+            await self(functions.messages.ReadMentions(entity))
             if message == ():
                 return True
 
@@ -1130,10 +1130,10 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
             message = utils.get_message_id(message)
 
         if isinstance(entity, types.InputPeerChannel):
-            return await self(functions.channels.ReadHistoryRequest(
+            return await self(functions.channels.ReadHistory(
                 utils.get_input_channel(entity), max_id=message))
         else:
-            return await self(functions.messages.ReadHistoryRequest(
+            return await self(functions.messages.ReadHistory(
                 entity, max_id=message))
 
     async def pin_message(
@@ -1173,7 +1173,7 @@ class MessageMethods(UploadMethods, ButtonMethods, MessageParseMethods):
             message = 0
 
         entity = await self.get_input_entity(entity)
-        await self(functions.messages.UpdatePinnedMessageRequest(
+        await self(functions.messages.UpdatePinnedMessage(
             peer=entity,
             id=message,
             silent=not notify

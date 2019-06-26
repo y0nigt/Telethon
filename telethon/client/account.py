@@ -50,7 +50,7 @@ class _TakeoutClient:
             self.__success = exc_type is None
 
         if self.__success is not None:
-            result = await self(functions.account.FinishTakeoutSessionRequest(
+            result = await self(functions.account.FinishTakeoutSession(
                 self.__success))
             if not result:
                 raise ValueError("Failed to finish the takeout.")
@@ -72,7 +72,7 @@ class _TakeoutClient:
             if not isinstance(r, TLRequest):
                 raise _NOT_A_REQUEST()
             await r.resolve(self, utils)
-            wrapped.append(functions.InvokeWithTakeoutRequest(takeout_id, r))
+            wrapped.append(functions.InvokeWithTakeout(takeout_id, r))
 
         return await self.__client(
             wrapped[0] if single else wrapped, ordered=ordered)
@@ -212,7 +212,7 @@ class AccountMethods(UserMethods):
         arg_specified = (arg is not None for arg in request_kwargs.values())
 
         if self._session.takeout_id is None or any(arg_specified):
-            request = functions.account.InitTakeoutSessionRequest(
+            request = functions.account.InitTakeoutSession(
                 **request_kwargs)
         else:
             request = None

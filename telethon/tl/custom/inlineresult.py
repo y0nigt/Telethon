@@ -122,7 +122,7 @@ class InlineResult:
         """
         entity = await self._client.get_input_entity(entity)
         reply_id = None if reply_to is None else utils.get_message_id(reply_to)
-        req = functions.messages.SendInlineBotResultRequest(
+        req = functions.messages.SendInlineBotResult(
             peer=entity,
             query_id=self._query_id,
             id=self.result.id,

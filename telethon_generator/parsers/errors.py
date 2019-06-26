@@ -28,7 +28,7 @@ def _get_class_name(error_code):
         )
 
     return snake_to_camel_case(
-        error_code.replace('FIRSTNAME', 'FIRST_NAME').lower(), suffix='Error')
+        error_code.replace('FIRSTNAME', 'FIRST_NAME').lower()) + 'Error'
 
 
 class Error:

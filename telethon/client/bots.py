@@ -47,7 +47,7 @@ class BotMethods(UserMethods):
                 message = results[0].click('TelethonOffTopic')
         """
         bot = await self.get_input_entity(bot)
-        result = await self(functions.messages.GetInlineBotResultsRequest(
+        result = await self(functions.messages.GetInlineBotResults(
             bot=bot,
             peer=types.InputPeerEmpty(),
             query=query,

@@ -17,7 +17,7 @@ class _DialogsIter(RequestIter):
     async def _init(
             self, offset_date, offset_id, offset_peer, ignore_pinned, ignore_migrated, folder
     ):
-        self.request = functions.messages.GetDialogsRequest(
+        self.request = functions.messages.GetDialogs(
             offset_date=offset_date,
             offset_id=offset_id,
             offset_peer=offset_peer,
@@ -96,7 +96,7 @@ class _DialogsIter(RequestIter):
 
 class _DraftsIter(RequestIter):
     async def _init(self, **kwargs):
-        r = await self.client(functions.messages.GetAllDraftsRequest())
+        r = await self.client(functions.messages.GetAllDrafts())
         self.buffer.extend(custom.Draft._from_update(self.client, u)
                            for u in r.updates)
 
@@ -310,7 +310,7 @@ class DialogMethods(UserMethods):
             raise ValueError('You can only set either entities or unpack, not both')
 
         if unpack is not None:
-            return await self(functions.folders.DeleteFolderRequest(
+            return await self(functions.folders.DeleteFolder(
                 folder_id=unpack
             ))
 
@@ -327,7 +327,7 @@ class DialogMethods(UserMethods):
         elif len(entities) != len(folder):
             raise ValueError('Number of folders does not match number of entities')
 
-        return await self(functions.folders.EditPeerFoldersRequest([
+        return await self(functions.folders.EditPeerFolders([
             types.InputFolderPeer(x, folder_id=y)
             for x, y in zip(entities, folder)
         ]))
@@ -370,15 +370,15 @@ class DialogMethods(UserMethods):
         """
         entity = await self.get_input_entity(entity)
         if isinstance(entity, types.InputPeerChannel):
-            return await self(functions.channels.LeaveChannelRequest(entity))
+            return await self(functions.channels.LeaveChannel(entity))
 
         if isinstance(entity, types.InputPeerChat):
-            result = await self(functions.messages.DeleteChatUserRequest(
+            result = await self(functions.messages.DeleteChatUser(
                 entity.chat_id, types.InputUserSelf()))
         else:
             result = None
 
-        await self(functions.messages.DeleteHistoryRequest(entity, 0, revoke=revoke))
+        await self(functions.messages.DeleteHistory(entity, 0, revoke=revoke))
         return result
 
     def conversation(

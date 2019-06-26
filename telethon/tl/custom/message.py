@@ -816,7 +816,7 @@ class Message(ChatGetter, SenderGetter, TLObject, abc.ABC):
 
             try:
                 return await self._client(
-                    functions.messages.GetBotCallbackAnswerRequest(
+                    functions.messages.GetBotCallbackAnswer(
                         peer=self._input_chat,
                         msg_id=self.id,
                         data=data

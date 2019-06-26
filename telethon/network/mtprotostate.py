@@ -88,7 +88,7 @@ class MTProtoState:
             body = GzipPacked.gzip_if_smaller(content_related, data)
         else:
             body = GzipPacked.gzip_if_smaller(content_related,
-                bytes(InvokeAfterMsgRequest(after_id, data)))
+                bytes(InvokeAfterMsg(after_id, data)))
 
         buffer.write(struct.pack('<qii', msg_id, seq_no, len(body)))
         buffer.write(body)

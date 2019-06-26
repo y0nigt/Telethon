@@ -214,7 +214,7 @@ class InlineQuery(EventBuilder):
                 switch_pm = types.InlineBotSwitchPM(switch_pm, switch_pm_param)
 
             return await self._client(
-                functions.messages.SetInlineBotResultsRequest(
+                functions.messages.SetInlineBotResults(
                     query_id=self.query.query_id,
                     results=results,
                     cache_time=cache_time,

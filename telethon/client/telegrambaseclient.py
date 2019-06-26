@@ -265,8 +265,8 @@ class TelegramBaseClient(abc.ABC):
         # Used on connection. Capture the variables in a lambda since
         # exporting clients need to create this InvokeWithLayerRequest.
         system = platform.uname()
-        self._init_with = lambda x: functions.InvokeWithLayerRequest(
-            LAYER, functions.InitConnectionRequest(
+        self._init_with = lambda x: functions.InvokeWithLayer(
+            LAYER, functions.InitConnection(
                 api_id=self._api_id,
                 device_model=device_model or system.system or 'Unknown',
                 system_version=system_version or system.release or '1.0',
@@ -429,7 +429,7 @@ class TelegramBaseClient(abc.ABC):
         self._session.save()
 
         await self._sender.send(self._init_with(
-            functions.help.GetConfigRequest()))
+            functions.help.GetConfig()))
 
         self._updates_handle = self._loop.create_task(self._update_loop())
 
@@ -541,10 +541,10 @@ class TelegramBaseClient(abc.ABC):
         """Gets the Data Center (DC) associated to 'dc_id'"""
         cls = self.__class__
         if not cls._config:
-            cls._config = await self(functions.help.GetConfigRequest())
+            cls._config = await self(functions.help.GetConfig())
 
         if cdn and not self._cdn_config:
-            cls._cdn_config = await self(functions.help.GetCdnConfigRequest())
+            cls._cdn_config = await self(functions.help.GetCdnConfig())
             for pk in cls._cdn_config.public_keys:
                 rsa.add_key(pk.public_key)
 
@@ -577,8 +577,8 @@ class TelegramBaseClient(abc.ABC):
         ))
         self._log[__name__].info('Exporting authorization for data center %s',
                                  dc)
-        auth = await self(functions.auth.ExportAuthorizationRequest(dc_id))
-        req = self._init_with(functions.auth.ImportAuthorizationRequest(
+        auth = await self(functions.auth.ExportAuthorization(dc_id))
+        req = self._init_with(functions.auth.ImportAuthorization(
             id=auth.id, bytes=auth.bytes
         ))
         await sender.send(req)

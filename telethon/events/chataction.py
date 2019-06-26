@@ -220,7 +220,7 @@ class ChatAction(EventBuilder):
 
             if isinstance(self._pinned_message, int)\
                     and await self.get_input_chat():
-                r = await self._client(functions.channels.GetMessagesRequest(
+                r = await self._client(functions.channels.GetMessages(
                     self._input_chat, [self._pinned_message]
                 ))
                 try:

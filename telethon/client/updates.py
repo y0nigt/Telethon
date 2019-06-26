@@ -20,7 +20,7 @@ class UpdateMethods(UserMethods):
     async def _run_until_disconnected(self: 'TelegramClient'):
         try:
             # Make a high-level request to notify that we want updates
-            await self(functions.updates.GetStateRequest())
+            await self(functions.updates.GetState())
             return await self.disconnected
         except KeyboardInterrupt:
             pass
@@ -228,7 +228,7 @@ class UpdateMethods(UserMethods):
         self._session.catching_up = True
         try:
             while True:
-                d = await self(functions.updates.GetDifferenceRequest(
+                d = await self(functions.updates.GetDifference(
                     pts, date, 0
                 ))
                 if isinstance(d, (types.updates.DifferenceSlice,
@@ -339,7 +339,7 @@ class UpdateMethods(UserMethods):
             # We also don't really care about their result.
             # Just send them periodically.
             try:
-                self._sender.send(functions.PingRequest(rnd()))
+                self._sender.send(functions.Ping(rnd()))
             except (ConnectionError, asyncio.CancelledError):
                 return
 
@@ -361,7 +361,7 @@ class UpdateMethods(UserMethods):
                     continue
 
                 try:
-                    await self(functions.updates.GetStateRequest())
+                    await self(functions.updates.GetState())
                 except (ConnectionError, asyncio.CancelledError):
                     return
 
@@ -451,13 +451,13 @@ class UpdateMethods(UserMethods):
 
             if not pts_date:
                 # First-time, can't get difference. Get pts instead.
-                result = await self(functions.messages.GetPeerDialogsRequest([
+                result = await self(functions.messages.GetPeerDialogs([
                     utils.get_input_dialog(where)
                 ]))
                 self._state_cache[channel_id] = result.dialogs[0].pts
                 return
 
-            result = await self(functions.updates.GetChannelDifferenceRequest(
+            result = await self(functions.updates.GetChannelDifference(
                 channel=where,
                 filter=types.ChannelMessagesFilterEmpty(),
                 pts=pts_date,  # just pts
@@ -467,11 +467,11 @@ class UpdateMethods(UserMethods):
         else:
             if not pts_date[0]:
                 # First-time, can't get difference. Get pts instead.
-                result = await self(functions.updates.GetStateRequest())
+                result = await self(functions.updates.GetState())
                 self._state_cache[None] = result.pts, result.date
                 return
 
-            result = await self(functions.updates.GetDifferenceRequest(
+            result = await self(functions.updates.GetDifference(
                 pts=pts_date[0],
                 date=pts_date[1],
                 qts=0

@@ -27,7 +27,7 @@ class _DirectDownloadIter(RequestIter):
     async def _init(
             self, file, dc_id, offset, stride, chunk_size, request_size, file_size
     ):
-        self.request = functions.upload.GetFileRequest(
+        self.request = functions.upload.GetFile(
             file, offset=offset, limit=request_size)
 
         self.total = file_size
@@ -44,7 +44,7 @@ class _DirectDownloadIter(RequestIter):
                 self._sender = await self.client._borrow_exported_sender(dc_id)
             except errors.DcIdInvalidError:
                 # Can't export a sender for the ID we are currently in
-                config = await self.client(functions.help.GetConfigRequest())
+                config = await self.client(functions.help.GetConfig())
                 for option in config.dc_options:
                     if option.ip_address == self.client.session.server_address:
                         self.client.session.set_dc(
@@ -258,7 +258,7 @@ class DownloadMethods(UserMethods):
             # The fix seems to be using the full channel chat photo.
             ie = await self.get_input_entity(entity)
             if isinstance(ie, types.InputPeerChannel):
-                full = await self(functions.channels.GetFullChannelRequest(ie))
+                full = await self(functions.channels.GetFullChannel(ie))
                 return await self._download_photo(
                     full.full_chat.chat_photo, file,
                     date=None, progress_callback=None,

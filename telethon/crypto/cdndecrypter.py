@@ -52,14 +52,14 @@ class CdnDecrypter:
             cdn_aes, cdn_redirect.cdn_file_hashes
         )
 
-        cdn_file = await cdn_client(GetCdnFileRequest(
+        cdn_file = await cdn_client(GetCdnFile(
             file_token=cdn_redirect.file_token,
             offset=cdn_redirect.cdn_file_hashes[0].offset,
             limit=cdn_redirect.cdn_file_hashes[0].limit
         ))
         if isinstance(cdn_file, CdnFileReuploadNeeded):
             # We need to use the original client here
-            await client(ReuploadCdnFileRequest(
+            await client(ReuploadCdnFile(
                 file_token=cdn_redirect.file_token,
                 request_token=cdn_file.request_token
             ))
@@ -82,7 +82,7 @@ class CdnDecrypter:
         """
         if self.cdn_file_hashes:
             cdn_hash = self.cdn_file_hashes.pop(0)
-            cdn_file = self.client(GetCdnFileRequest(
+            cdn_file = self.client(GetCdnFile(
                 self.file_token, cdn_hash.offset, cdn_hash.limit
             ))
             cdn_file.bytes = self.cdn_aes.encrypt(cdn_file.bytes)

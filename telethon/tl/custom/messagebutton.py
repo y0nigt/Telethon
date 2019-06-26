@@ -80,7 +80,7 @@ class MessageButton:
             return await self._client.send_message(
                 self._chat, self.button.text, reply_to=self._msg_id)
         elif isinstance(self.button, types.KeyboardButtonCallback):
-            req = functions.messages.GetBotCallbackAnswerRequest(
+            req = functions.messages.GetBotCallbackAnswer(
                 peer=self._chat, msg_id=self._msg_id, data=self.button.data
             )
             try:
@@ -88,13 +88,13 @@ class MessageButton:
             except BotTimeout:
                 return None
         elif isinstance(self.button, types.KeyboardButtonSwitchInline):
-            return await self._client(functions.messages.StartBotRequest(
+            return await self._client(functions.messages.StartBot(
                 bot=self._bot, peer=self._chat, start_param=self.button.query
             ))
         elif isinstance(self.button, types.KeyboardButtonUrl):
             return webbrowser.open(self.button.url)
         elif isinstance(self.button, types.KeyboardButtonGame):
-            req = functions.messages.GetBotCallbackAnswerRequest(
+            req = functions.messages.GetBotCallbackAnswer(
                 peer=self._chat, msg_id=self._msg_id, game=True
             )
             try:

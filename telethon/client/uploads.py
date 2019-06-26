@@ -277,7 +277,7 @@ class UploadMethods(ButtonMethods, MessageParseMethods, UserMethods):
             raise TypeError('Cannot use {!r} as file'.format(file))
 
         markup = self.build_reply_markup(buttons)
-        request = functions.messages.SendMediaRequest(
+        request = functions.messages.SendMedia(
             entity, media, reply_to_msg_id=reply_to, message=caption,
             entities=msg_entities, reply_markup=markup, silent=silent
         )
@@ -307,12 +307,12 @@ class UploadMethods(ButtonMethods, MessageParseMethods, UserMethods):
             # it as media and then convert that to :tl:`InputMediaPhoto`.
             fh, fm, _ = await self._file_to_media(file)
             if isinstance(fm, types.InputMediaUploadedPhoto):
-                r = await self(functions.messages.UploadMediaRequest(
+                r = await self(functions.messages.UploadMedia(
                     entity, media=fm
                 ))
                 fm = utils.get_input_media(r.photo)
             elif isinstance(fm, types.InputMediaUploadedDocument):
-                r = await self(functions.messages.UploadMediaRequest(
+                r = await self(functions.messages.UploadMedia(
                     entity, media=fm
                 ))
                 fm = utils.get_input_media(r.document)
@@ -328,7 +328,7 @@ class UploadMethods(ButtonMethods, MessageParseMethods, UserMethods):
             ))
 
         # Now we can construct the multi-media request
-        result = await self(functions.messages.SendMultiMediaRequest(
+        result = await self(functions.messages.SendMultiMedia(
             entity, reply_to_msg_id=reply_to, multi_media=media, silent=silent
         ))
 
@@ -480,10 +480,10 @@ class UploadMethods(ButtonMethods, MessageParseMethods, UserMethods):
                 # The SavePartRequest is different depending on whether
                 # the file is too large or not (over or less than 10MB)
                 if is_large:
-                    request = functions.upload.SaveBigFilePartRequest(
+                    request = functions.upload.SaveBigFilePart(
                         file_id, part_index, part_count, part)
                 else:
-                    request = functions.upload.SaveFilePartRequest(
+                    request = functions.upload.SaveFilePart(
                         file_id, part_index, part)
 
                 result = await self(request)

@@ -57,7 +57,7 @@ class _ChatAction:
         # Since `self._action` is passed by reference we can avoid
         # recreating the request all the time and still modify
         # `self._action.progress` directly in `progress`.
-        self._request = functions.messages.SetTypingRequest(
+        self._request = functions.messages.SetTyping(
             self._chat, self._action)
 
         self._running = True
@@ -86,7 +86,7 @@ class _ChatAction:
             pass
         except asyncio.CancelledError:
             if self._auto_cancel:
-                await self._client(functions.messages.SetTypingRequest(
+                await self._client(functions.messages.SetTyping(
                     self._chat, types.SendMessageCancelAction()))
 
     def progress(self, current, total):
@@ -124,7 +124,7 @@ class _ParticipantsIter(RequestIter):
 
         if isinstance(entity, types.InputPeerChannel):
             self.total = (await self.client(
-                functions.channels.GetFullChannelRequest(entity)
+                functions.channels.GetFullChannel(entity)
             )).full_chat.participants_count
 
             if self.limit <= 0:
@@ -132,7 +132,7 @@ class _ParticipantsIter(RequestIter):
 
             self.seen = set()
             if aggressive and not filter:
-                self.requests.extend(functions.channels.GetParticipantsRequest(
+                self.requests.extend(functions.channels.GetParticipants(
                     channel=entity,
                     filter=types.ChannelParticipantsSearch(x),
                     offset=0,
@@ -140,7 +140,7 @@ class _ParticipantsIter(RequestIter):
                     hash=0
                 ) for x in (search or string.ascii_lowercase))
             else:
-                self.requests.append(functions.channels.GetParticipantsRequest(
+                self.requests.append(functions.channels.GetParticipants(
                     channel=entity,
                     filter=filter or types.ChannelParticipantsSearch(search),
                     offset=0,
@@ -150,7 +150,7 @@ class _ParticipantsIter(RequestIter):
 
         elif isinstance(entity, types.InputPeerChat):
             full = await self.client(
-                functions.messages.GetFullChatRequest(entity.chat_id))
+                functions.messages.GetFullChat(entity.chat_id))
             if not isinstance(
                     full.full_chat.participants, types.ChatParticipants):
                 # ChatParticipantsForbidden won't have ``.participants``
@@ -243,7 +243,7 @@ class _AdminLogIter(RequestIter):
             for admin in admins:
                 admin_list.append(await self.client.get_input_entity(admin))
 
-        self.request = functions.channels.GetAdminLogRequest(
+        self.request = functions.channels.GetAdminLog(
             self.entity, q=search or '', min_id=min_id, max_id=max_id,
             limit=0, events_filter=events_filter, admins=admin_list or None
         )
@@ -281,14 +281,14 @@ class _ProfilePhotoIter(RequestIter):
     ):
         entity = await self.client.get_input_entity(entity)
         if isinstance(entity, (types.InputPeerUser, types.InputPeerSelf)):
-            self.request = functions.photos.GetUserPhotosRequest(
+            self.request = functions.photos.GetUserPhotos(
                 entity,
                 offset=offset,
                 max_id=max_id,
                 limit=1
             )
         else:
-            self.request = functions.messages.SearchRequest(
+            self.request = functions.messages.Search(
                 peer=entity,
                 q='',
                 filter=types.InputMessagesFilterChatPhotos(),
@@ -756,7 +756,7 @@ class ChatMethods(UserMethods):
 
         if isinstance(action, types.SendMessageCancelAction):
             # ``SetTypingRequest.resolve`` will get input peer of ``entity``.
-            return self(functions.messages.SetTypingRequest(
+            return self(functions.messages.SetTyping(
                 entity, types.SendMessageCancelAction()))
 
         return _ChatAction(

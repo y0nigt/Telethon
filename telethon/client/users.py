@@ -127,7 +127,7 @@ class UserMethods(TelegramBaseClient):
 
         try:
             me = (await self(
-                functions.users.GetUsersRequest([types.InputUserSelf()])))[0]
+                functions.users.GetUsers([types.InputUserSelf()])))[0]
 
             self._bot = me.bot
             if not self._self_input_peer:
@@ -171,7 +171,7 @@ class UserMethods(TelegramBaseClient):
         if self._authorized is None:
             try:
                 # Any request that requires authorization will work
-                await self(functions.updates.GetStateRequest())
+                await self(functions.updates.GetState())
                 self._authorized = True
             except errors.RPCError:
                 self._authorized = False
@@ -260,14 +260,14 @@ class UserMethods(TelegramBaseClient):
             tmp = []
             while users:
                 curr, users = users[:200], users[200:]
-                tmp.extend(await self(functions.users.GetUsersRequest(curr)))
+                tmp.extend(await self(functions.users.GetUsers(curr)))
             users = tmp
         if chats:  # TODO Handle chats slice?
             chats = (await self(
-                functions.messages.GetChatsRequest(chats))).chats
+                functions.messages.GetChats(chats))).chats
         if channels:
             channels = (await self(
-                functions.channels.GetChannelsRequest(channels))).chats
+                functions.channels.GetChannels(channels))).chats
 
         # Merge users, chats and channels into a single dictionary
         id_entity = {
@@ -392,7 +392,7 @@ class UserMethods(TelegramBaseClient):
         # regardless. These are the only two special-cased requests.
         peer = utils.get_peer(peer)
         if isinstance(peer, types.PeerUser):
-            users = await self(functions.users.GetUsersRequest([
+            users = await self(functions.users.GetUsers([
                 types.InputUser(peer.user_id, access_hash=0)]))
             if users and not isinstance(users[0], types.UserEmpty):
                 # If the user passed a valid ID they expect to work for
@@ -407,7 +407,7 @@ class UserMethods(TelegramBaseClient):
             return types.InputPeerChat(peer.chat_id)
         elif isinstance(peer, types.PeerChannel):
             try:
-                channels = await self(functions.channels.GetChannelsRequest([
+                channels = await self(functions.channels.GetChannels([
                     types.InputChannel(peer.channel_id, access_hash=0)]))
                 return utils.get_input_peer(channels.chats[0])
             except errors.ChannelInvalidError:
@@ -473,7 +473,7 @@ class UserMethods(TelegramBaseClient):
         if phone:
             try:
                 for user in (await self(
-                        functions.contacts.GetContactsRequest(0))).users:
+                        functions.contacts.GetContacts(0))).users:
                     if user.phone == phone:
                         return user
             except errors.BotMethodInvalidError:
@@ -485,7 +485,7 @@ class UserMethods(TelegramBaseClient):
             username, is_join_chat = utils.parse_username(string)
             if is_join_chat:
                 invite = await self(
-                    functions.messages.CheckChatInviteRequest(username))
+                    functions.messages.CheckChatInvite(username))
 
                 if isinstance(invite, types.ChatInvite):
                     raise ValueError(
@@ -497,7 +497,7 @@ class UserMethods(TelegramBaseClient):
             elif username:
                 try:
                     result = await self(
-                        functions.contacts.ResolveUsernameRequest(username))
+                        functions.contacts.ResolveUsername(username))
                 except errors.UsernameNotOccupiedError as e:
                     raise ValueError('No user has "{}" as username'
                                      .format(username)) from e

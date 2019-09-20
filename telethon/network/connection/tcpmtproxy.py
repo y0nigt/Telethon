@@ -11,6 +11,8 @@ from .tcpintermediate import (
 
 from ...crypto import AESModeCTR
 
+from ...fork_helpers import delay_with_jitter
+
 
 class MTProxyIO:
     """
@@ -117,7 +119,7 @@ class TcpMTProxy(ObfuscatedConnection):
         except asyncio.TimeoutError:
             pass
         except Exception:
-            await asyncio.sleep(2)
+            await asyncio.sleep(delay_with_jitter(2.000, 2.000))
 
         if self._reader.at_eof():
             await self.disconnect()

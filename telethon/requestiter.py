@@ -3,6 +3,7 @@ import asyncio
 import time
 
 from . import helpers
+from .fork_helpers import delay_with_jitter
 
 
 class RequestIter(abc.ABC):
@@ -29,7 +30,7 @@ class RequestIter(abc.ABC):
     def __init__(self, client, limit, *, reverse=False, wait_time=None, **kwargs):
         self.client = client
         self.reverse = reverse
-        self.wait_time = wait_time
+        self.wait_time = delay_with_jitter(wait_time or 1.000, 1.000)
         self.kwargs = kwargs
         self.limit = max(float('inf') if limit is None else limit, 0)
         self.left = self.limit
@@ -64,8 +65,9 @@ class RequestIter(abc.ABC):
         if self.index == len(self.buffer):
             # asyncio will handle times <= 0 to sleep 0 seconds
             if self.wait_time:
+                wait_t = 1 / delay_with_jitter(self.wait_time or 1.000, 1.000)
                 await asyncio.sleep(
-                    self.wait_time - (time.time() - self.last_load),
+                    wait_t - (time.time() - self.last_load),
                     loop=self.client.loop
                 )
                 self.last_load = time.time()

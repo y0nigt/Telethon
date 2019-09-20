@@ -5,6 +5,7 @@ import typing
 from .. import utils, errors, hints
 from ..requestiter import RequestIter
 from ..tl import types, functions
+from ..fork_helpers import delay_with_jitter
 
 _MAX_CHUNK_SIZE = 100
 
@@ -137,7 +138,7 @@ class _MessagesIter(RequestIter):
             raise StopAsyncIteration
 
         if self.wait_time is None:
-            self.wait_time = 1 if self.limit > 3000 else 0
+            self.wait_time = delay_with_jitter(self.wait_time or 1.000)
 
         # When going in reverse we need an offset of `-limit`, but we
         # also want to respect what the user passed, so add them together.
@@ -242,7 +243,8 @@ class _IDsIter(RequestIter):
 
         # 30s flood wait every 300 messages (3 requests of 100 each, 30 of 10, etc.)
         if self.wait_time is None:
-            self.wait_time = 10 if self.limit > 300 else 0
+            min_val = 10.000 if self.limit > 300 else 1.000
+            self.wait_time = delay_with_jitter(self.wait_time or 10.000, min_val)
 
     async def _load_next_chunk(self):
         ids = self._ids[self._offset:self._offset + _MAX_CHUNK_SIZE]
@@ -447,6 +449,8 @@ class MessageMethods:
             if not utils.is_list_like(ids):
                 ids = [ids]
 
+            wait_time = delay_with_jitter(wait_time or 1.000, 1.000)
+
             return _IDsIter(
                 client=self,
                 reverse=reverse,
@@ -455,6 +459,9 @@ class MessageMethods:
                 entity=entity,
                 ids=ids
             )
+
+        msg_jitter = delay_with_jitter(wait_time or 1.000, 1.000)
+        wait_time += (1 / msg_jitter)
 
         return _MessagesIter(
             client=self,

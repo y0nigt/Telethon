@@ -22,6 +22,7 @@ from ..tl.types import (
 )
 from ..crypto import AuthKey
 from ..helpers import retry_range
+from ..fork_helpers import delay_with_jitter
 
 
 class MTProtoSender:
@@ -48,7 +49,7 @@ class MTProtoSender:
         self._loggers = loggers
         self._log = loggers[__name__]
         self._retries = retries
-        self._delay = delay
+        self._delay = delay_with_jitter(delay or 1.000, 1.000)
         self._auto_reconnect = auto_reconnect
         self._connect_timeout = connect_timeout
         self._auth_key_callback = auth_key_callback
@@ -346,13 +347,13 @@ class MTProtoSender:
                 self._log.info('Failed reconnection attempt %d with %s',
                                attempt, e.__class__.__name__)
 
-                await asyncio.sleep(self._delay)
+                await asyncio.sleep(delay_with_jitter(self._delay, 1.000))
             except Exception as e:
                 last_error = e
                 self._log.exception('Unexpected exception reconnecting on '
                                     'attempt %d', attempt)
 
-                await asyncio.sleep(self._delay)
+                await asyncio.sleep(delay_with_jitter(self._delay, 1.000))
             else:
                 self._send_queue.extend(self._pending_state.values())
                 self._pending_state.clear()

@@ -14,10 +14,12 @@ _NOT_A_REQUEST = lambda: TypeError('You can only invoke requests, not types!')
 if typing.TYPE_CHECKING:
     from .telegramclient import TelegramClient
 
+from ..fork_helpers import delay_with_jitter
+
 
 def _fmt_flood(delay, request, *, early=False, td=datetime.timedelta):
     return (
-        'Sleeping%s for %ds (%s) on %s flood wait',
+        'Sleeping%s for %.3fs (%s) on %s flood wait',
         ' early' if early else '',
         delay,
         td(seconds=delay),
@@ -37,9 +39,8 @@ class UserMethods:
             if r.CONSTRUCTOR_ID in self._flood_waited_requests:
                 due = self._flood_waited_requests[r.CONSTRUCTOR_ID]
                 diff = round(due - time.time())
-                if diff <= 3:  # Flood waits below 3 seconds are "ignored"
-                    self._flood_waited_requests.pop(r.CONSTRUCTOR_ID, None)
-                elif diff <= self.flood_sleep_threshold:
+                diff += delay_with_jitter(1.000, 1.000)
+                if diff <= self.flood_sleep_threshold:
                     self._log[__name__].info(*_fmt_flood(diff, r, early=True))
                     await asyncio.sleep(diff, loop=self._loop)
                     self._flood_waited_requests.pop(r.CONSTRUCTOR_ID, None)
@@ -81,17 +82,18 @@ class UserMethods:
                     'Telegram is having internal issues %s: %s',
                     e.__class__.__name__, e)
 
-                await asyncio.sleep(2)
+                await asyncio.sleep(delay_with_jitter(2.000, 2.000))
             except (errors.FloodWaitError, errors.SlowModeWaitError, errors.FloodTestPhoneWaitError) as e:
                 if utils.is_list_like(request):
                     request = request[request_index]
 
+                sleep_time = delay_with_jitter(e.seconds, 3.000)
                 self._flood_waited_requests\
-                    [request.CONSTRUCTOR_ID] = time.time() + e.seconds
+                    [request.CONSTRUCTOR_ID] = time.time() + sleep_time
 
-                if e.seconds <= self.flood_sleep_threshold:
-                    self._log[__name__].info(*_fmt_flood(e.seconds, request))
-                    await asyncio.sleep(e.seconds, loop=self._loop)
+                if sleep_time <= self.flood_sleep_threshold:
+                    self._log[__name__].info(*_fmt_flood(sleep_time, request))
+                    await asyncio.sleep(sleep_time, loop=self._loop)
                 else:
                     raise
             except (errors.PhoneMigrateError, errors.NetworkMigrateError,

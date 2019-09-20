@@ -1,2 +1,11 @@
+cryptg
+hachoir
+janus
+phonenumbers
+Pillow
 pyaes
+pysocks
+ratelimiter
 rsa
+ujson
+uvloop

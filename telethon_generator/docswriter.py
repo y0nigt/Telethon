@@ -6,6 +6,7 @@ class DocsWriter:
     """
     Utility class used to write the HTML files used on the documentation.
     """
+
     def __init__(self, filename, type_to_path):
         """
         Initializes the writer to the specified output file,

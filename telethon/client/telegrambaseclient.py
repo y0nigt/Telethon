@@ -2,10 +2,12 @@ import abc
 import asyncio
 import collections
 import logging
-import platform
+import random
 import time
 import typing
 
+from telethon.phones import parse_full
+from ..rate_limiters import get_rate_limiters
 from .. import version, helpers, __name__ as __base_name__
 from ..crypto import rsa
 from ..entitycache import EntityCache
@@ -161,35 +163,79 @@ class TelegramBaseClient(abc.ABC):
     _config = None
     _cdn_config = None
 
+    async def rate_limited_invoke(self, request: TLObject, ordered: bool = True, jitter: bool = True) -> typing.Any:
+        async with self.rate_limiters[0]:
+            async with self.rate_limiters[1]:
+                try:
+                    if jitter:
+                        await asyncio.sleep(random.uniform(0.011666, 0.333))
+                    return await self.__call__(request, True if ordered else False)
+                except RuntimeError as e:
+                    logging.exception(f'Client.rate_limited_invoke failed', e, request)
+                    raise
+
+    async def rate_limited_async(self, func: typing.Callable[[typing.Any], typing.Any], *args, jitter: bool = True, **kwargs) -> typing.Any:
+        async with self.rate_limiters[0]:
+            async with self.rate_limiters[1]:
+                try:
+                    if jitter:
+                        await asyncio.sleep(random.uniform(0.011666, 0.333))
+                    return await func(*args, **kwargs)
+                except RuntimeError as e:
+                    logging.exception(f'Client.rate_limited_async failed', e, args, kwargs)
+                    raise
+
+    def rate_limited(self, func: typing.Callable[[typing.Any], typing.Any], *args, jitter: bool = True, **kwargs) -> typing.Any:
+        with self.rate_limiters[0]:
+            with self.rate_limiters[1]:
+                try:
+                    if jitter:
+                        time.sleep(random.uniform(0.011666, 0.333))
+                    return func(*args, **kwargs)
+                except RuntimeError as e:
+                    logging.exception(f'Client.rate_limited failed', e, args, kwargs)
+                    raise
+
     # region Initialization
 
     def __init__(
             self: 'TelegramClient',
             session: 'typing.Union[str, Session]',
+            phone: str,
             api_id: int,
             api_hash: str,
             *,
             connection: 'typing.Type[Connection]' = ConnectionTcpFull,
+            phone_context='US',
             use_ipv6: bool = False,
             proxy: typing.Union[tuple, dict] = None,
             timeout: int = 10,
             request_retries: int = 5,
-            connection_retries: int =5,
+            connection_retries: int = 5,
             retry_delay: int = 1,
             auto_reconnect: bool = True,
             sequential_updates: bool = False,
-            flood_sleep_threshold: int = 60,
+            flood_sleep_threshold: int = 600,
             device_model: str = None,
             system_version: str = None,
             app_version: str = None,
             lang_code: str = 'en',
             system_lang_code: str = 'en',
+            lang_pack: str = '',
             loop: asyncio.AbstractEventLoop = None,
-            base_logger: typing.Union[str, logging.Logger] = None):
+            base_logger: typing.Union[str, logging.Logger] = None,
+            rl_small_window: typing.Any = None,
+            rl_large_window: typing.Any = None,
+    ):
         if not api_id or not api_hash:
             raise ValueError(
                 "Your API ID or Hash cannot be empty or None. "
                 "Refer to telethon.rtfd.io for more information.")
+
+        if rl_small_window and rl_large_window:
+            self.rate_limiters = [rl_small_window, rl_large_window]
+        else:
+            self.rate_limiters = get_rate_limiters()
 
         self._use_ipv6 = use_ipv6
         self._loop = loop or asyncio.get_event_loop()
@@ -207,6 +253,10 @@ class TelegramBaseClient(abc.ABC):
                 return base_logger.getChild(key)
 
         self._log = _Loggers()
+
+        if isinstance(phone, str) or phone is None:
+            self.__phone_number__ = phone
+            self.__phone_number_parsed__ = parse_full(phone=self.__phone_number__, context=phone_context, lang='EN')
 
         # Determine what session object we have
         if isinstance(session, str) or session is None:
@@ -263,18 +313,17 @@ class TelegramBaseClient(abc.ABC):
         init_proxy = None if not issubclass(connection, TcpMTProxy) else \
             types.InputClientProxy(*connection.address_info(proxy))
 
-        # Used on connection. Capture the variables in a lambda since
-        # exporting clients need to create this InvokeWithLayerRequest.
-        system = platform.uname()
+        lang_pack = (lang_pack if lang_pack == 'android' else '') or ''
+
         self._init_with = lambda x: functions.InvokeWithLayerRequest(
             LAYER, functions.InitConnectionRequest(
                 api_id=self.api_id,
-                device_model=device_model or system.system or 'Unknown',
-                system_version=system_version or system.release or '1.0',
-                app_version=app_version or self.__version__,
-                lang_code=lang_code,
-                system_lang_code=system_lang_code,
-                lang_pack='',  # "langPacks are for official apps only"
+                device_model=device_model or 'n/a',
+                system_version=system_version or 'n/a',
+                app_version=app_version or 'n/a',
+                lang_code=lang_code or 'en',
+                system_lang_code=system_lang_code or 'en',
+                lang_pack=lang_pack,
                 query=x,
                 proxy=init_proxy
             )

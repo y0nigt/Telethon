@@ -7,6 +7,7 @@ import typing
 from .. import helpers, utils, hints
 from ..requestiter import RequestIter
 from ..tl import types, functions, custom
+from ..fork_helpers import delay_with_jitter
 
 if typing.TYPE_CHECKING:
     from .telegramclient import TelegramClient
@@ -45,7 +46,7 @@ class _ChatAction:
         self._client = client
         self._chat = chat
         self._action = action
-        self._delay = delay
+        self._delay = delay_with_jitter(delay or 2.000, 2.000)
         self._auto_cancel = auto_cancel
         self._request = None
         self._task = None

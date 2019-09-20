@@ -184,16 +184,16 @@ def main():
             version = re.search(r"^__version__\s*=\s*'(.*)'.*$",
                                 f.read(), flags=re.MULTILINE).group(1)
         setup(
-            name='Telethon',
+            name='TelethonFork',
             version=version,
-            description="Full-featured Telegram client library for Python 3",
+            description="(y0nigt FORK) Full-featured Telegram client library for Python 3",
             long_description=long_description,
 
             url='https://github.com/LonamiWebs/Telethon',
             download_url='https://github.com/LonamiWebs/Telethon/releases',
 
-            author='Lonami Exo',
-            author_email='totufals@hotmail.com',
+            author='Yoni Gittelman',
+            author_email='y0nigt@gmail.com',
 
             license='MIT',
 
@@ -222,10 +222,18 @@ def main():
             packages=find_packages(exclude=[
                 'telethon_*', 'run_tests.py', 'try_telethon.py'
             ]),
-            install_requires=['pyaes', 'rsa'],
-            extras_require={
-                'cryptg': ['cryptg']
-            }
+            install_requires=[
+                'rsa',
+                'pyaes',
+                'hachoir',
+                'Pillow',
+                'cryptg',
+                'pysocks',
+                'uvloop',
+                'phonenumbers',
+                'ratelimiter',
+            ],
+            extras_require={}
         )
 
 
